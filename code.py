@@ -3,9 +3,15 @@ nerdymark's magic NeoPixel Picture Frame
 REQUIRED HARDWARE:
 * RGB NeoPixel LEDs connected to pin GP1.
 * A power source for the NeoPixels.
-* A CircuitPython (or MicroPython) board. This example uses the Raspberry Pi Pico W
+* A CircuitPython (or MicroPython) board. 
+  * This example uses the Raspberry Pi Pico W
 
-The LED strip is arranged in a 18x18 grid. The first 18 LEDs is the first row, the next 18 LEDs is the second row, and so on.
+The LED strip is arranged in a 18x18 grid.
+The first 18 LEDs is the first row,
+the next 18 LEDs is the second row, and so on.
+
+Odd rows are arranged from left to right,
+and even rows are arranged from right to left.
 """
 import time
 import random
@@ -14,10 +20,14 @@ import neopixel
 
 # Update this to match the number of NeoPixel LEDs connected to your board.
 NUM_PIXELS = 324
-DEFAULT_BRIGHTNESS = 0.01
+DEFAULT_BRIGHTNESS = 0.05
 
 
-pixels = neopixel.NeoPixel(board.GP1, NUM_PIXELS, brightness=DEFAULT_BRIGHTNESS, auto_write=False)
+pixels = neopixel.NeoPixel(
+    board.GP1,
+    NUM_PIXELS,
+    brightness=DEFAULT_BRIGHTNESS,
+    auto_write=False)
 
 
 def test_pixels():
@@ -86,7 +96,7 @@ def get_pixel(x, y):
     return pixels[index]
 
 
-def john_conways_game_of_life(speed=0.1):
+def john_conways_game_of_life(delay=0.5, density=None):
     """
     Run John Conway's Game of Life.
 
@@ -130,68 +140,118 @@ def john_conways_game_of_life(speed=0.1):
     The reproductive cells are a combination of the colors of the parent cells.
     """
     # Create a 18x18 grid of cells.
-    density = 0.15
-    grid = [[0 for _ in range(18)] for _ in range(18)]
-    for y in range(18):
-        for x in range(18):
+    if density is None:
+        # Random float between 0 and 1.
+        density = random.random()
+
+    width = 18
+    height = 18
+    for y in range(height):
+        for x in range(width):
             # Randomly set the initial state of the cell.
-            grid[y][x] = 1 if random.random() < density else 0
+            if random.random() < density:
+                set_pixel(x, y, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+            else:
+                set_pixel(x, y, (0, 0, 0))
+    
+    def find_live_neighbors(x, y, live_only=True):
+        print(f"Finding live neighbors for cell at ({x}, {y})")
+        cell_neighbors = []
+        max_index = width - 1
+
+        # Define the neighbors of the cell.
+        neighbors = [
+            (x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
+            (x - 1, y), (x + 1, y),
+            (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)
+        ]
+
+        for nx, ny in neighbors:
+            if ny % 2 == 0:
+                # Adjust for odd rows.
+                nx = abs(nx - width + 1)
+            # Ensure nx is within bounds after adjustment for odd rows
+            if 0 <= nx <= max_index and 0 <= ny <= max_index:
+                if get_pixel(nx, ny) != (0, 0, 0) and live_only:
+                    cell_neighbors.append((nx, ny))
+                elif not live_only:
+                    cell_neighbors.append((nx, ny))
+        return cell_neighbors
 
     # Run the game of life.
+    prev_cells = 0
     while True:
-        # Display the grid.
+        # Update each cell in the grid.
         for y in range(18):
-            for x in range(18):
-                if grid[y][x] == 1:
-                    set_pixel(x, y, (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255)))
-                else:
-                    set_pixel(x, y, (0, 0, 0))
-
-        # Create the next generation of the grid.
-        new_grid = [[0 for _ in range(18)] for _ in range(18)]
-        for y in range(18):
-            for x in range(18):
-                # Count the number of live neighbors.
-                live_neighbors = 0
-                for dy in [-1, 0, 1]:
-                    for dx in [-1, 0, 1]:
-                        if dy == 0 and dx == 0:
-                            continue
-                        if y + dy < 0 or y + dy >= 18 or x + dx < 0 or x + dx >= 18:
-                            continue
-                        if grid[y + dy][x + dx] == 1:
-                            live_neighbors += 1
+            for x in sorted(range(18), reverse=True) if y % 2 == 0 else \
+                    range(18):
+                print(f"Checking cell at ({x}, {y})")
+                live_neighbors = find_live_neighbors(x, y)
+                all_neighbors = find_live_neighbors(x, y, live_only=False)
 
                 # Apply the rules of the game of life.
-                if grid[y][x] == 1:
-                    if live_neighbors < 2 or live_neighbors > 3:
-                        new_grid[y][x] = 0
+                if get_pixel(x, y) != (0, 0, 0):
+                    if len(live_neighbors) < 2 or len(live_neighbors) > 3:
+                        # Any live cell with fewer than two live neighbors dies,
+                        # as if by underpopulation.
+                        # Any live cell with more than three live neighbors dies,
+                        # as if by overpopulation.
+                        print(f"Cell at ({x}, {y}) died.")
+                        set_pixel(x, y, (255, 0, 0))
+                        time.sleep(delay)
+                        set_pixel(x, y, (0, 0, 0))
+                        time.sleep(delay)
                     else:
-                        new_grid[y][x] = 1
+                        print(f"Cell at ({x}, {y}) survived.")
                 else:
-                    if live_neighbors == 3:
-                        new_grid[y][x] = 1
-                    else:
-                        new_grid[y][x] = 0
+                    if len(live_neighbors) == 3:
+                        colors = [
+                            get_pixel(nx, ny) for nx, ny in live_neighbors if
+                            get_pixel(nx, ny) != (0, 0, 0)]
 
-        # Update the grid.
-        grid = new_grid
-
-        # If the grid is empty, flash red 3 times and then restart.
-        if sum(sum(row) for row in grid) == 0:
-            for _ in range(3):
-                set_all_pixels((255, 0, 0))
-                time.sleep(0.5)
-                clear_pixels()
-                time.sleep(0.5)
+                        # Remove any None values from the list of colors.
+                        colors = [
+                            color for color in colors if color is not None]
+                        r = sum([color[0] for color in colors]) // len(colors)
+                        g = sum([color[1] for color in colors]) // len(colors)
+                        b = sum([color[2] for color in colors]) // len(colors)
+                        if y % 2 == 0:
+                            x = abs(x - width + 1)
+                        set_pixel(x, y, (r, g, b))
+                        time.sleep(delay)
+                        print(
+                            f"Cell at ({x}, {y}) was born. Cell's neighbors: {live_neighbors}")
+                        for cell_neighbor in all_neighbors:
+                            color = get_pixel(cell_neighbor[0],
+                                              cell_neighbor[1])
+                            set_pixel(
+                                cell_neighbor[0],
+                                cell_neighbor[1],
+                                (255, 255, 255))
+                            set_pixel(
+                                cell_neighbor[0],
+                                cell_neighbor[1],
+                                color)
+                        time.sleep(delay)
+        # Count the number of live cells.
+        live_cells = 0
+        for y in range(18):
+            for x in range(18):
+                if get_pixel(x, y) != (0, 0, 0):
+                    live_cells += 1
+        print(f"Number of live cells: {live_cells}")
+        if live_cells < 10:
+            print("All cells are dead. Stopping.")
             break
+        if live_cells == prev_cells:
+            print("No change in cells. Stopping.")
+            break
+        prev_cells = live_cells
 
-        # Wait before updating the grid.
-        time.sleep(speed)
+
+        # Delay between generations.
+        time.sleep(delay)
 
 
 while True:
-    john_conways_game_of_life()
+    john_conways_game_of_life(delay=0.01)
