@@ -96,7 +96,12 @@ def get_pixel(x, y):
     return pixels[index]
 
 
-def john_conways_game_of_life(delay=0.5, density=None):
+def john_conways_game_of_life(
+        delay=0.5,
+        density=None,
+        allow_mutations=False,
+        allow_visitors=False,
+        animations=True):
     """
     Run John Conway's Game of Life.
 
@@ -155,7 +160,7 @@ def john_conways_game_of_life(delay=0.5, density=None):
                 set_pixel(x, y, (0, 0, 0))
     
     def find_live_neighbors(x, y, live_only=True):
-        print(f"Finding live neighbors for cell at ({x}, {y})")
+        # print(f"Finding live neighbors for cell at ({x}, {y})")
         cell_neighbors = []
         max_index = width - 1
 
@@ -180,12 +185,13 @@ def john_conways_game_of_life(delay=0.5, density=None):
 
     # Run the game of life.
     prev_cells = 0
+    stale_generations = 0
     while True:
         # Update each cell in the grid.
         for y in range(18):
             for x in sorted(range(18), reverse=True) if y % 2 == 0 else \
                     range(18):
-                print(f"Checking cell at ({x}, {y})")
+                # print(f"Checking cell at ({x}, {y})")
                 live_neighbors = find_live_neighbors(x, y)
                 all_neighbors = find_live_neighbors(x, y, live_only=False)
 
@@ -196,14 +202,18 @@ def john_conways_game_of_life(delay=0.5, density=None):
                         # as if by underpopulation.
                         # Any live cell with more than three live neighbors dies,
                         # as if by overpopulation.
-                        print(f"Cell at ({x}, {y}) died.")
+                        print(f"Cell at ({x}, {y}) died because it had {len(live_neighbors)} live neighbors.")
                         set_pixel(x, y, (255, 0, 0))
                         time.sleep(delay)
                         set_pixel(x, y, (0, 0, 0))
                         time.sleep(delay)
-                    else:
-                        print(f"Cell at ({x}, {y}) survived.")
+                    # else:
+                    #     print(f"Cell at ({x}, {y}) survived.")
                 else:
+                    if animations:
+                        # Blink the cell for visibility.
+                        set_pixel(x, y, (255, 255, 255))
+                        set_pixel(x, y, (0, 0, 0))
                     if len(live_neighbors) == 3:
                         colors = [
                             get_pixel(nx, ny) for nx, ny in live_neighbors if
@@ -216,22 +226,33 @@ def john_conways_game_of_life(delay=0.5, density=None):
                         g = sum([color[1] for color in colors]) // len(colors)
                         b = sum([color[2] for color in colors]) // len(colors)
                         if y % 2 == 0:
-                            x = abs(x - width + 1)
+                            x = abs(x - width)
+                        else:
+                            print(f"Row {y} is odd, x is {x}")
+                        if allow_mutations:
+                            chance = random.random()
+                            if chance < 0.1:
+                                r = random.randint(0, 255)
+                                g = random.randint(0, 255)
+                                b = random.randint(0, 255)
+                                print(f"Cell at ({x}, {y}) will be born as a mutant with color ({r}, {g}, {b})")
                         set_pixel(x, y, (r, g, b))
                         time.sleep(delay)
                         print(
-                            f"Cell at ({x}, {y}) was born. Cell's neighbors: {live_neighbors}")
-                        for cell_neighbor in all_neighbors:
-                            color = get_pixel(cell_neighbor[0],
-                                              cell_neighbor[1])
-                            set_pixel(
-                                cell_neighbor[0],
-                                cell_neighbor[1],
-                                (255, 255, 255))
-                            set_pixel(
-                                cell_neighbor[0],
-                                cell_neighbor[1],
-                                color)
+                            f"Cell at ({x}, {y}) was born. Color: ({r}, {g}, {b})")
+                        if animations:
+                            for cell_neighbor in all_neighbors:
+                                color = get_pixel(cell_neighbor[0],
+                                                cell_neighbor[1])
+                                set_pixel(
+                                    cell_neighbor[0],
+                                    cell_neighbor[1],
+                                    (255, 255, 255))
+                                set_pixel(
+                                    cell_neighbor[0],
+                                    cell_neighbor[1],
+                                    color)
+                                time.sleep(delay)
                         time.sleep(delay)
         # Count the number of live cells.
         live_cells = 0
@@ -239,19 +260,36 @@ def john_conways_game_of_life(delay=0.5, density=None):
             for x in range(18):
                 if get_pixel(x, y) != (0, 0, 0):
                     live_cells += 1
-        print(f"Number of live cells: {live_cells}")
-        if live_cells < 10:
+        # print(f"Number of live cells: {live_cells}")
+        if live_cells == 0:
             print("All cells are dead. Stopping.")
             break
-        if live_cells == prev_cells:
-            print("No change in cells. Stopping.")
+        if live_cells < 10 and not allow_visitors:
+            print("Too few live cells. Stopping.")
             break
+        elif live_cells < width and allow_visitors:
+            # Add a random amount of visitors to the grid in a random spot, but with a limit.
+            visitors = random.randint(0, 100)
+            visitors_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            print(f"Adding {visitors} visitors to the grid with color {visitors_color}")
+            for _ in range(visitors):
+                x = random.randint(0, 17)
+                y = random.randint(0, 17)
+                set_pixel(x, y, visitors_color)
+                time.sleep(delay)
+        if live_cells == prev_cells:
+            stale_generations += 1
+        
+        if stale_generations > 10:
+            print("Too many stale generations. Stopping.")
+            break
+        print(f"Last generation had {prev_cells} live cells, this generation has {live_cells} live cells.")
         prev_cells = live_cells
-
 
         # Delay between generations.
         time.sleep(delay)
 
 
 while True:
-    john_conways_game_of_life(delay=0.01)
+    john_conways_game_of_life(delay=0, allow_mutations=True, allow_visitors=True, animations=True)
+
