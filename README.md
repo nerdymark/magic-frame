@@ -2,6 +2,8 @@
 
 A mesmerizing 18x18 LED matrix display featuring beautiful animations, games, and visual effects. Built with CircuitPython for the Raspberry Pi Pico W.
 
+🎮 **[Try the Live Web Simulation →](https://nerdymark.com/magic-frame-sim)**
+
 ![LED Matrix Demo](https://img.shields.io/badge/LEDs-324-brightgreen) ![CircuitPython](https://img.shields.io/badge/CircuitPython-8.x-blueviolet) ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ## 🌟 Features
