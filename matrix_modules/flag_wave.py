@@ -5,22 +5,28 @@ import time
 import math
 from matrix_modules.utils import set_pixel
 
-
 AMPLITUDE = 1.5
 FREQUENCY = 0.5
 WAVE_SPEED = 4.0
 
-
-def flag_wave(pixels, height, width, mode="pride", delay=0.02, duration=30):      
+def flag_wave(pixels, height, width, mode="pride", delay=0, duration=30):
     """
     Display a smoothly waving flag animation.
     """
-    # Color definitions
     stripes = {
         "pride": [(255, 0, 0), (255, 165, 0), (255, 255, 0),
                  (0, 128, 0), (0, 0, 255), (75, 0, 130), (238, 130, 238)],
-        "trans": [(91, 206, 250), (245, 169, 184), (255, 255, 255),
-                  (245, 169, 184), (91, 206, 250)],
+        "trans": [
+            (45, 105, 135),   # dimmer blue
+            (165, 105, 120),  # dimmer pink
+            (150, 150, 150),  # dimmer gray
+            (165, 105, 120),  # dimmer pink
+            (45, 105, 135)    # dimmer blue
+        ],
+        "ukraine": [
+            (0, 87, 183),     # Ukrainian blue
+            (255, 215, 0)     # Ukrainian yellow
+        ],
         "usa": [
             (255, 0, 0),
             (255, 255, 255),
@@ -35,49 +41,56 @@ def flag_wave(pixels, height, width, mode="pride", delay=0.02, duration=30):
             (255, 0, 0),
             (255, 255, 255),
             (255, 0, 0)
-            ]
+        ]
     }
 
     colors = stripes.get(mode, stripes["pride"])
     stripe_height = height / len(colors)
-
-    # Wave parameters
 
     def get_stripe_color(y):
         stripe_index = int(y / stripe_height)
         return colors[min(stripe_index, len(colors) - 1)]
 
     def interpolate_color(color1, color2, factor):
-        return tuple(int(c1 + (c2 - c1) * factor) for c1, c2 in zip(color1, color2))
+        return (
+            int(color1[0] + (color2[0] - color1[0]) * factor),
+            int(color1[1] + (color2[1] - color1[1]) * factor),
+            int(color1[2] + (color2[2] - color1[2]) * factor)
+        )
 
     def adjust_brightness(color, factor):
-        """Adjust color brightness while preserving hue"""
-        return tuple(min(255, max(0, int(c * factor))) for c in color)
-    
-    def get_lighting_factor(x, time):
-        """Calculate lighting factor based on wave position"""
-        phase = x * FREQUENCY + time * WAVE_SPEED
+        return (
+            min(255, max(0, int(color[0] * factor))),
+            min(255, max(0, int(color[1] * factor))),
+            min(255, max(0, int(color[2] * factor)))
+        )
+
+    def get_lighting_factor(x, t):
+        phase = x * FREQUENCY + t * WAVE_SPEED
         wave_pos = math.sin(phase)
-        # Peaks are brighter (1.2), troughs are darker (0.8)
         return 1.0 + (wave_pos * 0.2)
 
     start_time = time.monotonic()
+
+    # Fix serpentine wiring calculation
+    serpentine_x = [
+        [width - 1 - x if y % 2 == 0 else x for x in range(width)]
+        for y in range(height)
+    ]
 
     while True:
         current_time = time.monotonic() - start_time
         if current_time > duration:
             break
 
-        for x in range(width):
-            for y in range(height):
-                # Calculate wave offset
+        # Precompute lighting for each x for this frame
+        lighting_factors = [get_lighting_factor(x, current_time) for x in range(width)]
+
+        for y in range(height):
+            for x in range(width):
                 phase = x * FREQUENCY + current_time * WAVE_SPEED
                 offset = AMPLITUDE * math.sin(phase)
-
-                # Calculate new y position with wave effect
                 wave_y = y + offset
-
-                # Get colors for interpolation
                 base_y = int(wave_y)
                 frac = wave_y - base_y
 
@@ -90,18 +103,15 @@ def flag_wave(pixels, height, width, mode="pride", delay=0.02, duration=30):
                 else:
                     color = get_stripe_color(height - 1)
 
-                # Apply lighting effect
-                lighting = get_lighting_factor(x, current_time)
-                color = adjust_brightness(color, lighting)
+                color = adjust_brightness(color, lighting_factors[x])
 
-                # Apply special patterns for USA flag
                 if mode == "usa" and x < width // 3 and y < height // 2:
                     base_color = (0, 0, 255) if (x + y) % 2 == 0 else (255, 255, 255)
-                    color = adjust_brightness(base_color, lighting)
+                    color = adjust_brightness(base_color, lighting_factors[x])
 
-                # Account for zigzag LED pattern
-                display_x = abs(x - width + 1) if y % 2 == 0 else x
+                display_x = serpentine_x[y][x]
                 set_pixel(pixels, display_x, y, color, auto_write=False)
 
         pixels.show()
-        time.sleep(delay)
+        if delay > 0:
+            time.sleep(delay)

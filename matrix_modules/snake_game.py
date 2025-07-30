@@ -26,7 +26,7 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         return (0 <= pos[0] < width and 0 <= pos[1] < height and pos not in snake)
 
     def evaluate_move(pos):
-        """Simplified move evaluation"""
+        """Improved move evaluation"""
         if not is_valid_position(pos):
             return float('-inf')
 
@@ -34,14 +34,29 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         if dist_to_dot == 0:  # Immediate dot capture
             return float('inf')
 
-        # Quick space check
-        escape_dirs = sum(1 for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]
-                          if is_valid_position((pos[0] + dx, pos[1] + dy)))
+        # Enhanced space check - look ahead for escape routes
+        escape_dirs = 0
+        wall_penalty = 0
+        
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            next_pos = (pos[0] + dx, pos[1] + dy)
+            if is_valid_position(next_pos):
+                escape_dirs += 1
+                # Penalty for being near walls
+                if (next_pos[0] <= 1 or next_pos[0] >= width-2 or 
+                    next_pos[1] <= 1 or next_pos[1] >= height-2):
+                    wall_penalty += 10
+        
         if escape_dirs < 2:
             return float('-inf')
+        
+        # Penalize positions near walls/corners
+        if (pos[0] <= 1 or pos[0] >= width-2 or 
+            pos[1] <= 1 or pos[1] >= height-2):
+            wall_penalty += 20
 
-        # Basic scoring
-        return (50 * (1.0 / (dist_to_dot + 1)) + 10 * escape_dirs)  # Distance score + Available moves score
+        # Prioritize dot-seeking with wall avoidance
+        return (75 * (1.0 / (dist_to_dot + 1)) + 5 * escape_dirs - wall_penalty)
 
     def place_new_dot():
         """Place a new dot with improved randomization"""
@@ -81,7 +96,7 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         # Batch clear previous snake position
         for x, y in snake:
             if y % 2 == 0:
-                x = abs(x - width + 1)
+                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
 
         # Move the snake.
@@ -102,16 +117,13 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
             if base_score > float('-inf'):
                 # Add strong weight for moves that get closer to dot
                 dist_to_dot = manhattan_distance(pos, dot)
-                dot_score = 50 * (1.0 / (dist_to_dot + 1))  # Avoid division by zero
-
-                # Add extra score for moves directly towards dot
-                if (d == "right" and dot[0] > head[0]) or \
-                   (d == "left" and dot[0] < head[0]) or \
-                   (d == "down" and dot[1] > head[1]) or \
-                   (d == "up" and dot[1] < head[1]):
-                    dot_score *= 2
-
-                move_scores[d] = base_score + dot_score
+                current_dist = manhattan_distance(head, dot)
+                
+                # Extra score for moves that decrease distance to dot
+                if dist_to_dot < current_dist:
+                    move_scores[d] = base_score + 100  # Strong preference for approaching dot
+                else:
+                    move_scores[d] = base_score
             else:
                 move_scores[d] = float('-inf')
 
@@ -166,7 +178,7 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         if last_dot_pos:
             x, y = last_dot_pos
             if y % 2 == 0:
-                x = abs(x - width + 1)
+                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
             last_dot_pos = None  # Reset after clearing
 
@@ -183,12 +195,12 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         if dot:
             x, y = dot
             if y % 2 == 0:
-                x = abs(x - width + 1)
+                x = width - 1 - x
             set_pixel(pixels, x, y, (255, 0, 0), auto_write=False)
 
         for x, y in snake:
             if y % 2 == 0:
-                x = abs(x - width + 1)
+                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 255, 0), auto_write=False)
 
         # Single screen update per frame
@@ -199,48 +211,49 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         last_moves.append(new_head)
         if len(last_moves) > 4:
             last_moves.pop(0)
-        if len(last_moves) == 4 and \
-                last_moves[0] == last_moves[2] and \
-                last_moves[1] == last_moves[3]:
-            # Force change direction if oscillating
-            direction = random.choice([d for d in directions if d != direction])
 
-        # Check if the snake is about to hit the wall and force a change in direction
-        if new_head[0] == 0 or \
-                new_head[0] == width - 1 or \
-                new_head[1] == 0 or \
-                new_head[1] == height - 1:
-            safe_directions = [d for d in directions if is_valid_position(next_pos[d])]
-            if safe_directions:
-                direction = random.choice(safe_directions)
+        # Only use pattern breaking if not making progress toward the dot
+        current_dist = manhattan_distance(new_head, dot)
+        last_few_dists = [manhattan_distance(pos, dot) for pos in last_moves[-4:]] if len(last_moves) >= 4 else []
 
-        # Check if the snake is stuck in a corner and force a change in direction
-        if (new_head[0] == 0 or \
-                new_head[0] == width - 1) and \
-                (new_head[1] == 0 or \
-                 new_head[1] == height - 1):
-            safe_directions = [d for d in directions if is_valid_position(next_pos[d])]
-            if safe_directions:
-                direction = random.choice(safe_directions)
+        # Only break patterns if we're not approaching the dot
+        if len(last_moves) >= 4 and min(last_few_dists) >= current_dist:
+            # Oscillation detection (simplified)
+            if last_moves[0] == last_moves[2] and last_moves[1] == last_moves[3]:
+                # Get directions that would get us closer to the dot
+                safe_dirs = [d for d in directions if is_valid_position(next_pos[d])]
+                if safe_dirs:
+                    direction = random.choice(safe_dirs)
 
-        # Detect if the snake is stuck in a loop and force a change in direction
-        if len(last_moves) >= 8 and \
-                last_moves[-1] == last_moves[-3] and \
-                last_moves[-2] == last_moves[-4]:
-            direction = random.choice([d for d in directions if d != direction])
+        # Enhanced wall avoidance - check proximity to walls
+        near_wall = (new_head[0] <= 1 or new_head[0] >= width-2 or 
+                     new_head[1] <= 1 or new_head[1] >= height-2)
+        
+        if near_wall:
+            # Prioritize moves away from walls
+            away_from_wall = []
+            for d in directions:
+                test_pos = next_pos[d]
+                if is_valid_position(test_pos):
+                    # Check if this move takes us away from walls
+                    wall_dist = min(test_pos[0], width-1-test_pos[0], 
+                                   test_pos[1], height-1-test_pos[1])
+                    current_wall_dist = min(new_head[0], width-1-new_head[0], 
+                                           new_head[1], height-1-new_head[1])
+                    if wall_dist >= current_wall_dist:
+                        away_from_wall.append(d)
+            
+            if away_from_wall:
+                direction = random.choice(away_from_wall)
 
-        # Additional check to break out of circular patterns
-        if len(last_moves) >= 12 and \
-                last_moves[-1] == last_moves[-4] and \
-                last_moves[-2] == last_moves[-5] and \
-                last_moves[-3] == last_moves[-6]:
-            direction = random.choice([d for d in directions if d != direction])
-
-        # Additional check to break out of circular patterns when the dot is in a corner
-        if dot in [(0, 0), (0, height - 1), (width - 1, 0), (width - 1, height - 1)]:
-            if len(last_moves) >= 4 and \
-                    last_moves[-1] == last_moves[-3] and \
-                    last_moves[-2] == last_moves[-4]:
-                direction = random.choice([d for d in directions if d != direction])
+        # Simplified loop detection - only break loops if not approaching dot
+        if len(last_moves) >= 6:
+            # Check for simple back-and-forth pattern
+            if (last_moves[-1] == last_moves[-3] == last_moves[-5] and 
+                last_moves[-2] == last_moves[-4]):
+                safe_dirs = [d for d in directions if is_valid_position(next_pos[d])]
+                if safe_dirs:
+                    direction = random.choice(safe_dirs)
 
     clear_pixels(pixels)
+
