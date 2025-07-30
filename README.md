@@ -6,7 +6,7 @@ A mesmerizing 18x18 LED matrix display featuring beautiful animations, games, an
 
 ## 🌟 Features
 
-- **13+ Stunning Animations**: From serene water ripples to dynamic plasma effects
+- **13 Stunning Animation Modules**: From serene water ripples to dynamic plasma effects (15 total animation sequences including flag variations)
 - **Interactive Games**: Self-playing Snake and Conway's Game of Life
 - **Flag Displays**: Pride, Trans, Ukraine, and USA flags with realistic wave effects
 - **Particle Systems**: Fish schooling, bug swarms, and Matrix rain
@@ -16,7 +16,7 @@ A mesmerizing 18x18 LED matrix display featuring beautiful animations, games, an
 
 - **Microcontroller**: Raspberry Pi Pico W (or compatible CircuitPython board)
 - **LED Strip**: WS2812B (NeoPixel) strip with 324 LEDs
-- **Power Supply**: 5V power supply capable of at least 20A (324 LEDs × 60mA max per LED)
+- **Power Supply**: 5V power supply capable of at least 20A (324 LEDs × 60mA max per LED = 19.44A theoretical max)
 - **Additional Components**:
   - 1000µF capacitor (across power supply terminals)
   - 470Ω resistor (between data pin and first LED)
@@ -27,13 +27,13 @@ A mesmerizing 18x18 LED matrix display featuring beautiful animations, games, an
 ### LED Matrix Layout
 
 The 324 LEDs are arranged in an 18×18 matrix with serpentine wiring:
-- **Odd rows** (1, 3, 5...): Left to right
 - **Even rows** (0, 2, 4...): Right to left
+- **Odd rows** (1, 3, 5...): Left to right
 
 ```
-Row 0: →→→→→→→→→→→→→→→→→→ (LEDs 0-17)
-Row 1: ←←←←←←←←←←←←←←←←←← (LEDs 18-35)
-Row 2: →→→→→→→→→→→→→→→→→→ (LEDs 36-53)
+Row 0: ←←←←←←←←←←←←←←←←←← (LEDs 0-17)
+Row 1: →→→→→→→→→→→→→→→→→→ (LEDs 18-35)
+Row 2: ←←←←←←←←←←←←←←←←←← (LEDs 36-53)
 ...and so on
 ```
 
