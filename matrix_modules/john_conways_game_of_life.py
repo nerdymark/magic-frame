@@ -75,11 +75,11 @@ def john_conways_game_of_life(
             else:
                 set_pixel(pixels, x, y, (0, 0, 0))
 
-    def find_live_neighbors(x, y, live_only=True):
-        # print(f"Finding live neighbors for cell at ({x}, {y})")
-        cell_neighbors = []
-        max_index = width - 1
-
+    def get_neighbors_info(x, y):
+        """Get both live and all neighbors in one pass for efficiency"""
+        live_neighbors = []
+        all_neighbors = []
+        
         # Define the neighbors of the cell.
         neighbors = [
             (x - 1, y - 1), (x, y - 1), (x + 1, y - 1),
@@ -88,29 +88,30 @@ def john_conways_game_of_life(
         ]
 
         for nx, ny in neighbors:
+            # Fix serpentine wiring calculation
+            display_nx = nx
             if ny % 2 == 0:
-                # Adjust for odd rows.
-                nx = abs(nx - width + 1)
-            # Ensure nx is within bounds after adjustment for odd rows
-            if 0 <= nx <= max_index and 0 <= ny <= max_index:
-                if get_pixel(pixels, nx, ny) != (0, 0, 0) and live_only:
-                    cell_neighbors.append((nx, ny))
-                elif not live_only:
-                    cell_neighbors.append((nx, ny))
-        return cell_neighbors
+                display_nx = width - 1 - nx
+            
+            # Ensure coordinates are within bounds
+            if 0 <= display_nx < width and 0 <= ny < height:
+                all_neighbors.append((display_nx, ny))
+                if get_pixel(pixels, display_nx, ny) != (0, 0, 0):
+                    live_neighbors.append((display_nx, ny))
+        
+        return live_neighbors, all_neighbors
 
     # Run the game of life.
     prev_cells = 0
     stale_generations = 0
     generations_table = {}
     while True:
-        # Update each cell in the grid.
-        for y in range(18):
-            for x in sorted(range(18), reverse=True) if y % 2 == 0 else \
-                    range(18):
-                # print(f"Checking cell at ({x}, {y})")
-                live_neighbors = find_live_neighbors(x, y)
-                all_neighbors = find_live_neighbors(x, y, live_only=False)
+        # Update each cell in the grid using proper dimensions
+        for y in range(height):
+            for x in sorted(range(width), reverse=True) if y % 2 == 0 else \
+                    range(width):
+                # Get neighbor info in single pass
+                live_neighbors, all_neighbors = get_neighbors_info(x, y)
 
                 # Apply the rules of the game of life.
                 if get_pixel(pixels, x, y) != (0, 0, 0):
@@ -125,22 +126,21 @@ def john_conways_game_of_life(
                         else:
                             set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
                     if max_generations > 0:
-                        if x in generations_table and \
-                                y in generations_table[x]:
-                            generations_table[x][y] += 1
-                        else:
-                            generations_table[x] = {y: 1}
+                        # Optimize generations table access
+                        if x not in generations_table:
+                            generations_table[x] = {}
+                        generations_table[x][y] = generations_table[x].get(y, 0) + 1
 
-                        # Adjust the color value to appear dimmer.
-                        # We can't control the brightness directly.
+                        # Optimize color dimming calculation
                         prev_color = get_pixel(pixels, x, y)
-                        # Find next_brightness with prev_brightness,
-                        # max_generations, and min_brightness.
-                        next_factor = 1 - (1 / max_generations)
-                        # next_colors is a tuple of the next color values.
-                        next_colors = tuple(
-                            int(prev_color[i] * next_factor) for i in range(3))
-                        set_pixel(pixels, x, y, next_colors, auto_write=False)
+                        if prev_color != (0, 0, 0):  # Only process live cells
+                            next_factor = 1 - (1 / max_generations)
+                            next_colors = (
+                                int(prev_color[0] * next_factor),
+                                int(prev_color[1] * next_factor),
+                                int(prev_color[2] * next_factor)
+                            )
+                            set_pixel(pixels, x, y, next_colors, auto_write=False)
                     if max_generations > 0 and \
                             generations_table[x][y] >= max_generations:
                         if show_log:
@@ -160,18 +160,20 @@ def john_conways_game_of_life(
                         set_pixel(pixels, x, y, (255, 255, 255))
                         set_pixel(pixels, x, y, (0, 0, 0))
                     if len(live_neighbors) == 3:
-                        colors = [
-                            get_pixel(pixels, nx, ny) for nx, ny in live_neighbors if
-                            get_pixel(pixels, nx, ny) != (0, 0, 0)]
-
-                        # Remove any None values from the list of colors.
-                        colors = [
-                            color for color in colors if color is not None]
-                        r = sum([color[0] for color in colors]) // len(colors)
-                        g = sum([color[1] for color in colors]) // len(colors)
-                        b = sum([color[2] for color in colors]) // len(colors)
-                        if y % 2 == 0:
-                            x = abs(x - width)
+                        # Optimize color calculation - get colors once
+                        colors = []
+                        for nx, ny in live_neighbors:
+                            color = get_pixel(pixels, nx, ny)
+                            if color != (0, 0, 0) and color is not None:
+                                colors.append(color)
+                        
+                        if colors:
+                            r = sum(color[0] for color in colors) // len(colors)
+                            g = sum(color[1] for color in colors) // len(colors)
+                            b = sum(color[2] for color in colors) // len(colors)
+                        else:
+                            r, g, b = 255, 255, 255  # Default white if no valid colors
+                        # Remove incorrect serpentine adjustment - already handled in get_neighbors_info
                         if allow_mutations:
                             chance = random.random()
                             if chance < 0.1:
@@ -189,51 +191,46 @@ def john_conways_game_of_life(
                             print(
                                 f"Cell at ({x}, {y}) was born. Color: ({r}, {g}, {b})")  # noqa: E501  # pylint: disable=line-too-long
                         if animations:
+                            # Batch color operations for better performance
                             temp_colors = []
-                            for cell_neighbor in all_neighbors:
-                                color = get_pixel(pixels,
-                                                  cell_neighbor[0],
-                                                  cell_neighbor[1])
+                            for nx, ny in all_neighbors:
+                                color = get_pixel(pixels, nx, ny)
                                 temp_colors.append(color)
-                                set_pixel(
-                                    pixels,
-                                    cell_neighbor[0],
-                                    cell_neighbor[1],
-                                    (255, 255, 255), auto_write=False)
+                                set_pixel(pixels, nx, ny, (255, 255, 255), auto_write=False)
                             pixels.show()
                             time.sleep(delay * 4)
 
-                            for cell_neighbor, color in zip(
-                                    all_neighbors, temp_colors):
-                                set_pixel(
-                                    pixels,
-                                    cell_neighbor[0],
-                                    cell_neighbor[1],
-                                    color,
-                                    auto_write=False)
+                            # Restore colors in batch
+                            for (nx, ny), color in zip(all_neighbors, temp_colors):
+                                set_pixel(pixels, nx, ny, color, auto_write=False)
                             pixels.show()
                             time.sleep(delay)
-        # Count the number of live cells.
+        # Count the number of live cells using proper dimensions
         live_cells = 0
-        for y in range(18):
-            for x in range(18):
-                if get_pixel(pixels, x, y) != (0, 0, 0):
+        for y in range(height):
+            for x in range(width):
+                # Handle serpentine wiring for counting
+                display_x = x
+                if y % 2 == 0:
+                    display_x = width - 1 - x
+                if get_pixel(pixels, display_x, y) != (0, 0, 0):
                     live_cells += 1
-        # print(f"Number of live cells: {live_cells}")
+        
+        # Early termination optimization
         if live_cells == 0:
             if show_log:
                 print("All cells are dead. Stopping.")
             game_over(pixels, delay=delay)
             break
-        if live_cells < 10 and not allow_visitors:
+        elif live_cells < 5 and not allow_visitors:
             if show_log:
                 print("Too few live cells. Stopping.")
             game_over(pixels, delay=delay)
             break
         # Add visitors to the grid if the number of live cells is less than
         # the width of the grid or if the grid has stabilized.
-        elif live_cells < width and allow_visitors or \
-                stale_generations > 10 and allow_visitors:
+        elif (live_cells < width and allow_visitors) or \
+                (stale_generations > 10 and allow_visitors):
             # Add a random amount of visitors to the grid in a random spot,
             # but with a limit.
             visitors = random.randint(0, num_pixels // 2)
@@ -244,13 +241,17 @@ def john_conways_game_of_life(
             if show_log:
                 print(f"Adding {visitors} visitors to the grid with color {visitors_color}")  # noqa: E501  # pylint: disable=line-too-long
             for _ in range(visitors):
-                x = random.randint(0, 17)
-                y = random.randint(0, 17)
-                if get_pixel(pixels, x, y) != (0, 0, 0):
-                    pass
-                else:
-                    set_pixel(pixels, x, y, visitors_color)
+                x = random.randint(0, width - 1)
+                y = random.randint(0, height - 1)
+                # Handle serpentine wiring for visitor placement
+                display_x = x
+                if y % 2 == 0:
+                    display_x = width - 1 - x
+                    
+                if get_pixel(pixels, display_x, y) == (0, 0, 0):
+                    set_pixel(pixels, display_x, y, visitors_color, auto_write=not animations)
                     if animations:
+                        pixels.show()
                         time.sleep(delay)
         # Check if the grid has stabilized - Either the same number of live
         # cells or within a margin of error.

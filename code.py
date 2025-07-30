@@ -17,7 +17,8 @@ import random
 import board  # pylint: disable=import-error
 import neopixel  # pylint: disable=import-error
 from matrix_modules import snake_game, john_conways_game_of_life, flag_wave, dvd_screen_saver, \
-    the_matrix, blizzard
+    the_matrix, blizzard, plasma, falling_blocks, plasma_two, bug_swarm, fish_schooling, \
+    water_ripples, search_light
 
 # Update this to match the number of NeoPixel LEDs connected to your board.
 NUM_PIXELS = 324
@@ -34,9 +35,17 @@ pixels = neopixel.NeoPixel(
 
 
 while True:
+    search_light.search_light(pixels, WIDTH, HEIGHT, delay=0.01)
+    flag_wave.flag_wave(pixels, WIDTH, HEIGHT, delay=0.01, mode="ukraine", duration=10)
+    water_ripples.water_ripples(pixels, WIDTH, HEIGHT, delay=0.01, max_frames=1000)
+    bug_swarm.bug_swarm(pixels, WIDTH, HEIGHT, delay=0.01, max_frames=1000)
+    fish_schooling.fish_schooling(pixels, WIDTH, HEIGHT, delay=0.01, max_frames=1000)
+    plasma_two.plasma_two(pixels, WIDTH, HEIGHT, delay=0.0, max_frames=1000)
+    falling_blocks.falling_blocks(pixels, WIDTH, HEIGHT, delay=0.0, max_frames=1000)
+    flag_wave.flag_wave(pixels, WIDTH, HEIGHT, delay=0.01, mode="trans", duration=10)
+    plasma.plasma(pixels, WIDTH, HEIGHT, delay=0.0, max_frames=1000)
     blizzard.blizzard(pixels, WIDTH, HEIGHT, delay=0.01, max_frames=1000)
     the_matrix.the_matrix(pixels, WIDTH, HEIGHT, delay=0.01, max_frames=1000)
-    flag_wave.flag_wave(pixels, WIDTH, HEIGHT, delay=0.01, mode="trans", duration=10)
     snake_game.snake_game(pixels, WIDTH, HEIGHT, delay=0.0, show_log=False)
     flag_wave.flag_wave(pixels, WIDTH, HEIGHT, delay=0.01, mode="usa", duration=10)
     flag_wave.flag_wave(pixels, WIDTH, HEIGHT, delay=0.01, mode="pride", duration=10)
@@ -50,4 +59,3 @@ while True:
                                                         show_log=False,
                                                         animations=False,
                                                         max_generations=10)
-
