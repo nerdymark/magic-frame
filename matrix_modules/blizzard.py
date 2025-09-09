@@ -3,13 +3,16 @@ Display a snowstorm on the LED matrix.
 """
 import time
 import random
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def blizzard(pixels, width, height, delay=0.01, max_frames=1000):
+def blizzard(pixels, width=WIDTH, height=HEIGHT, delay=0.01, max_frames=1000):
     """
     Display a snowstorm on the LED matrix with wind effect and varied flake patterns.
     """
+    log_module_start("blizzard", max_frames=max_frames)
+    start_time = time.monotonic()
     # Create pixel mapping to handle zigzag wiring pattern
     pixel_map = {}
     for y in range(height):
@@ -140,3 +143,5 @@ def blizzard(pixels, width, height, delay=0.01, max_frames=1000):
         pixels.show()
         time.sleep(delay)
         frame_number += 1
+    
+    log_module_finish("blizzard", frame_count=frame_number, duration=time.monotonic() - start_time)

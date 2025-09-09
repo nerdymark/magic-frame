@@ -1,99 +1,137 @@
 """
-True plasma effect based on sine wave mathematics.
+True plasma effect based on sine wave mathematics - OPTIMIZED.
 Implements the classic plasma algorithm using multiple sine functions
 combined to create smooth, flowing patterns.
 """
 import math
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def plasma_two(pixels, width, height, delay=0.0, max_frames=1000):
+def plasma_two(pixels, width=WIDTH, height=HEIGHT, delay=0.0, max_frames=1000):
     """
-    Generate plasma effect using sine wave mathematics.
-    Based on the classic plasma algorithm from lodev.org
-    Optimized for 30+ FPS performance.
+    Generate plasma effect using classic sine wave mathematics.
+    Heavily optimized for maximum FPS on microcontrollers.
     """
+    log_module_start("plasma_two", max_frames=max_frames)
     start_time = time.monotonic()
     
-    # Pre-calculate static sine values for coordinates to avoid repeated calculations
-    x_sins = [math.sin(x / 6.0) for x in range(width)]
-    y_sins = [math.sin(y / 4.5) for y in range(height)]
-    xy_sins = [[math.sin((x + y) / 7.0) for x in range(width)] for y in range(height)]
+    # High-precision sine lookup table
+    LUT_SIZE = 1024
+    LUT_MASK = LUT_SIZE - 1
+    sine_lut = []
+    for i in range(LUT_SIZE):
+        angle = (i * 6.28318530718) / LUT_SIZE  # 2*PI
+        sine_lut.append(math.sin(angle))
+    
+    # Fast sine using lookup table
+    def fast_sin(x):
+        # Map to 0-1023 range
+        idx = int(x * 162.97466) & LUT_MASK  # x * (1024 / 2π)
+        return sine_lut[idx]
+    
+    # Pre-calculate all static values
+    pixel_map = []
+    for y in range(height):
+        for x in range(width):
+            if y % 2 == 0:
+                pixel_map.append(y * width + (width - 1 - x))
+            else:
+                pixel_map.append(y * width + x)
+    
+    # Pre-calculate coordinate divisions
+    x_div16 = [x * 0.0625 for x in range(width)]  # x/16
+    y_div8 = [y * 0.125 for y in range(height)]   # y/8
+    xy_div16 = []
+    for y in range(height):
+        for x in range(width):
+            xy_div16.append((x + y) * 0.0625)  # (x+y)/16
+    
+    # Pre-calculate distances from center (most expensive part)
+    dist_center = []
+    cx = width * 0.5
+    cy = height * 0.5
+    for y in range(height):
+        for x in range(width):
+            dx = x - cx
+            dy = y - cy
+            # Store distance/8 directly
+            dist_center.append(math.sqrt(dx * dx + dy * dy) * 0.125)
+    
+    # Pre-calculate color lookup tables
+    COLOR_LUT_SIZE = 512
+    red_lut = []
+    green_lut = []
+    blue_lut = []
+    for i in range(COLOR_LUT_SIZE):
+        phase = (i * 6.28318530718) / COLOR_LUT_SIZE
+        red_lut.append(int(128 + 127 * math.sin(phase)))
+        green_lut.append(int(128 + 127 * math.sin(phase + 2.094)))
+        blue_lut.append(int(128 + 127 * math.sin(phase + 4.188)))
     
     frame = 0
+    pixel_idx = 0
+    
     while frame < max_frames:
-        frame_start = time.monotonic()
-        current_time = time.monotonic() - start_time
+        t = time.monotonic() - start_time
         
-        # Time-based animation parameters (faster for visible motion)
-        time1 = current_time * 3.0
-        time2 = current_time * 2.5
-        time3 = current_time * 2.0
+        # Pre-calculate time factors once per frame
+        t1 = t * 2.0
+        t2 = t * 1.7
+        t3 = t * 1.3
         
-        # Pre-calculate moving centers and time-based values once per frame
-        center_x = width * 0.5 + 4.0 * math.sin(time1 * 0.3)
-        center_y = height * 0.5 + 3.0 * math.cos(time2 * 0.25)
-        center_x2 = width * 0.5 + 3.0 * math.cos(time3 * 0.4)
-        center_y2 = height * 0.5 + 2.0 * math.sin(time3 * 0.35)
+        # Moving center calculations
+        mcx = cx + fast_sin(t * 1.0) * 4.0
+        mcy = cy + fast_sin(t * 0.85 + 1.571) * 4.0  # cos offset
         
-        # Pre-calculate time-based sine values
-        sin_time1 = math.sin(time1 * 0.7)
-        cos_time1 = math.cos(time1 * 0.7)
-        sin_time2 = math.sin(time2 * 0.8 + 2.094)
-        cos_time2 = math.cos(time2 * 0.8 + 2.094)
-        sin_time3 = math.sin(time3 * 0.9 + 4.188)
-        cos_time3 = math.cos(time3 * 0.9 + 4.188)
+        # Pre-calculate time sines for the frame
+        sin_t1 = fast_sin(t1)
+        sin_t2 = fast_sin(t2)
+        sin_t3 = fast_sin(t3)
         
+        pixel_idx = 0
         for y in range(height):
+            # Pre-calculate y-based values once per row
+            y_sin = fast_sin(y_div8[y] + t2)
+            
             for x in range(width):
-                # Use pre-calculated static values
-                value1 = x_sins[x]
-                value2 = y_sins[y]
-                value3 = xy_sins[y][x]
+                # Optimized plasma calculation
+                # Combine pre-calculated and dynamic values
                 
-                # Calculate distance-based patterns (optimized)
-                dx = x - center_x
-                dy = y - center_y
-                distance = (dx * dx + dy * dy) ** 0.5  # Slightly faster than math.sqrt
-                value4 = math.sin(distance * 0.333)  # /3.0 as multiplication
+                # Static components with time offset
+                v1 = fast_sin(x_div16[x] + t1)
+                v2 = y_sin  # Pre-calculated per row
+                v3 = fast_sin(xy_div16[pixel_idx] + t3)
+                v4 = fast_sin(dist_center[pixel_idx] + t1)
                 
-                dx2 = x - center_x2
-                dy2 = y - center_y2
-                distance2 = (dx2 * dx2 + dy2 * dy2) ** 0.5
-                value5 = math.sin(distance2 * 0.25)  # /4.0 as multiplication
+                # Moving center component (most expensive)
+                dx = x - mcx
+                dy = y - mcy
+                # Approximate distance with fast calculation
+                dist_approx = (abs(dx) + abs(dy)) * 0.09  # Manhattan distance approximation
+                v5 = fast_sin(dist_approx)
                 
-                # Combine patterns with pre-calculated time values
-                combined = (value1 + value2 + value3 + 
-                           math.sin(value4 + time1) + 
-                           math.sin(value5 + time2)) * 0.2  # /5.0 as multiplication
+                # Combine all values
+                combined = (v1 + v2 + v3 + v4 + v5) * 102.4  # *0.2 * 512 for color LUT
                 
-                # Use pre-calculated time-based sine/cosine for RGB
-                combined_sin = math.sin(combined)
+                # Fast color lookup
+                color_idx = int(combined + t1 * 81.92) & 511  # Modulo 512 with bitmask
                 
-                red = int(128.0 + 120.0 * combined_sin * sin_time1)
-                green = int(128.0 + 120.0 * combined_sin * sin_time2)
-                blue = int(128.0 + 120.0 * combined_sin * sin_time3)
+                # Direct pixel write with pre-calculated mapping
+                pixels[pixel_map[pixel_idx]] = (
+                    red_lut[color_idx],
+                    green_lut[color_idx],
+                    blue_lut[color_idx]
+                )
                 
-                # Clamp values (faster than max/min)
-                red = 255 if red > 255 else (0 if red < 0 else red)
-                green = 255 if green > 255 else (0 if green < 0 else green)
-                blue = 255 if blue > 255 else (0 if blue < 0 else blue)
-                
-                # Handle serpentine LED layout
-                display_x = width - 1 - x if y % 2 == 0 else x
-                
-                # Direct pixel access for maximum speed
-                pixel_index = y * width + display_x
-                pixels[pixel_index] = (red, green, blue)
+                pixel_idx += 1
         
         pixels.show()
         frame += 1
         
-        # Target 30+ FPS (33ms per frame max)
+        # No delay for maximum speed
         if delay > 0:
-            elapsed = time.monotonic() - frame_start
-            target_frame_time = 1.0 / 30.0  # 33ms for 30 FPS
-            sleep_time = max(0, target_frame_time - elapsed)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+            time.sleep(delay)
+    
+    log_module_finish("plasma_two", frame_count=frame, duration=time.monotonic() - start_time)

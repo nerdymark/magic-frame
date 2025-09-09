@@ -5,13 +5,16 @@ Features separation, alignment, and cohesion behaviors for realistic schooling.
 import math
 import random
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def fish_schooling(pixels, width, height, delay=0.08, max_frames=1000):
+def fish_schooling(pixels, width=WIDTH, height=HEIGHT, delay=0.08, max_frames=1000):
     """
     Simulate fish schooling behavior using boids algorithm.
     """
+    log_module_start("fish_schooling", max_frames=max_frames)
+    start_time = time.monotonic()
     
     class Fish:
         def __init__(self, x, y):
@@ -239,10 +242,7 @@ def fish_schooling(pixels, width, height, delay=0.08, max_frames=1000):
                 background[y][x] = (max(0, r - 12), max(0, g - 12), max(0, b - 12))
                 
                 # Apply faded background
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
-                set_pixel(pixels, display_x, y, background[y][x], auto_write=False)
+                set_pixel(pixels, x, y, background[y][x], auto_write=False)
         
         # Update all fish
         for fish in school:
@@ -280,15 +280,13 @@ def fish_schooling(pixels, width, height, delay=0.08, max_frames=1000):
                             min(255, old_b + trail_color[2])
                         )
                     
-                    # Handle serpentine wiring
-                    display_x = trail_x
-                    if trail_y % 2 == 0:
-                        display_x = width - 1 - trail_x
-                    
-                    set_pixel(pixels, display_x, trail_y, background[trail_y][trail_x], auto_write=False)
+                    set_pixel(pixels, trail_x, trail_y, background[trail_y][trail_x], auto_write=False)
         
         pixels.show()
         frame += 1
         
         if delay > 0:
             time.sleep(delay)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("fish_schooling", frame_count=frame, duration=duration)

@@ -42,13 +42,14 @@
     """
 import time
 import random
-from matrix_modules.utils import set_pixel, clear_pixels, get_pixel, game_over
+from matrix_modules.utils import set_pixel, clear_pixels, get_pixel, game_over, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 def john_conways_game_of_life(
         pixels,
-        width,
-        height,
-        delay=0.5,
+        width=WIDTH,
+        height=HEIGHT,
+        delay=0.08,  # Much faster - ~12 FPS for smooth gameplay
         density=None,
         allow_mutations=False,
         allow_visitors=False,
@@ -58,6 +59,9 @@ def john_conways_game_of_life(
     """
     Display John Conway's Game of Life on the given pixels.
     """
+    log_module_start("john_conways_game_of_life", allow_mutations=allow_mutations, allow_visitors=allow_visitors)
+    start_time = time.monotonic()
+    generation_count = 0
     num_pixels = width * height
     # Create a 18x18 grid of cells.
     if density is None:
@@ -88,16 +92,11 @@ def john_conways_game_of_life(
         ]
 
         for nx, ny in neighbors:
-            # Fix serpentine wiring calculation
-            display_nx = nx
-            if ny % 2 == 0:
-                display_nx = width - 1 - nx
-            
             # Ensure coordinates are within bounds
-            if 0 <= display_nx < width and 0 <= ny < height:
-                all_neighbors.append((display_nx, ny))
-                if get_pixel(pixels, display_nx, ny) != (0, 0, 0):
-                    live_neighbors.append((display_nx, ny))
+            if 0 <= nx < width and 0 <= ny < height:
+                all_neighbors.append((nx, ny))
+                if get_pixel(pixels, nx, ny) != (0, 0, 0):
+                    live_neighbors.append((nx, ny))
         
         return live_neighbors, all_neighbors
 
@@ -106,10 +105,10 @@ def john_conways_game_of_life(
     stale_generations = 0
     generations_table = {}
     while True:
-        # Update each cell in the grid using proper dimensions
+        generation_count += 1
+        # Update each cell in the grid
         for y in range(height):
-            for x in sorted(range(width), reverse=True) if y % 2 == 0 else \
-                    range(width):
+            for x in range(width):
                 # Get neighbor info in single pass
                 live_neighbors, all_neighbors = get_neighbors_info(x, y)
 
@@ -173,10 +172,10 @@ def john_conways_game_of_life(
                             b = sum(color[2] for color in colors) // len(colors)
                         else:
                             r, g, b = 255, 255, 255  # Default white if no valid colors
-                        # Remove incorrect serpentine adjustment - already handled in get_neighbors_info
+                        # Color mixing from live neighbors
                         if allow_mutations:
                             chance = random.random()
-                            if chance < 0.1:
+                            if chance < 0.2:  # Double mutation chance for more variety
                                 r = random.randint(0, 255)
                                 g = random.randint(0, 255)
                                 b = random.randint(0, 255)
@@ -205,15 +204,11 @@ def john_conways_game_of_life(
                                 set_pixel(pixels, nx, ny, color, auto_write=False)
                             pixels.show()
                             time.sleep(delay)
-        # Count the number of live cells using proper dimensions
+        # Count the number of live cells
         live_cells = 0
         for y in range(height):
             for x in range(width):
-                # Handle serpentine wiring for counting
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
-                if get_pixel(pixels, display_x, y) != (0, 0, 0):
+                if get_pixel(pixels, x, y) != (0, 0, 0):
                     live_cells += 1
         
         # Early termination optimization
@@ -229,27 +224,22 @@ def john_conways_game_of_life(
             break
         # Add visitors to the grid if the number of live cells is less than
         # the width of the grid or if the grid has stabilized.
-        elif (live_cells < width and allow_visitors) or \
-                (stale_generations > 10 and allow_visitors):
+        elif (live_cells < width * 2 and allow_visitors) or \
+                (stale_generations > 5 and allow_visitors):  # Add visitors more frequently
             # Add a random amount of visitors to the grid in a random spot,
             # but with a limit.
-            visitors = random.randint(0, num_pixels // 2)
-            visitors_color = (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255))
+            visitors = random.randint(8, num_pixels // 6)  # More predictable visitor count
+            # Bright, distinctive visitor colors for visibility
+            visitor_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 255, 255)]
+            visitors_color = random.choice(visitor_colors)
             if show_log:
                 print(f"Adding {visitors} visitors to the grid with color {visitors_color}")  # noqa: E501  # pylint: disable=line-too-long
             for _ in range(visitors):
                 x = random.randint(0, width - 1)
                 y = random.randint(0, height - 1)
-                # Handle serpentine wiring for visitor placement
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
                     
-                if get_pixel(pixels, display_x, y) == (0, 0, 0):
-                    set_pixel(pixels, display_x, y, visitors_color, auto_write=not animations)
+                if get_pixel(pixels, x, y) == (0, 0, 0):
+                    set_pixel(pixels, x, y, visitors_color, auto_write=not animations)
                     if animations:
                         pixels.show()
                         time.sleep(delay)
@@ -274,3 +264,6 @@ def john_conways_game_of_life(
         # Delay between generations.
         time.sleep(delay)
     clear_pixels(pixels)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("john_conways_game_of_life", frame_count=generation_count, duration=duration)

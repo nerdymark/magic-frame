@@ -3,16 +3,18 @@ Display a waving flag on the screen.
 """
 import time
 import math
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import FLAG_DURATION_FRAMES, READABLE_DELAY, WIDTH, HEIGHT
 
 AMPLITUDE = 1.5
 FREQUENCY = 0.5
 WAVE_SPEED = 4.0
 
-def flag_wave(pixels, height, width, mode="pride", delay=0, duration=30):
+def flag_wave(pixels, width=WIDTH, height=HEIGHT, mode="pride", delay=READABLE_DELAY, max_frames=FLAG_DURATION_FRAMES):
     """
     Display a smoothly waving flag animation.
     """
+    log_module_start("flag_wave", mode=mode, max_frames=max_frames)
     stripes = {
         "pride": [(255, 0, 0), (255, 165, 0), (255, 255, 0),
                  (0, 128, 0), (0, 0, 255), (75, 0, 130), (238, 130, 238)],
@@ -71,17 +73,10 @@ def flag_wave(pixels, height, width, mode="pride", delay=0, duration=30):
         return 1.0 + (wave_pos * 0.2)
 
     start_time = time.monotonic()
+    frame = 0
 
-    # Fix serpentine wiring calculation
-    serpentine_x = [
-        [width - 1 - x if y % 2 == 0 else x for x in range(width)]
-        for y in range(height)
-    ]
-
-    while True:
+    while frame < max_frames:
         current_time = time.monotonic() - start_time
-        if current_time > duration:
-            break
 
         # Precompute lighting for each x for this frame
         lighting_factors = [get_lighting_factor(x, current_time) for x in range(width)]
@@ -109,9 +104,11 @@ def flag_wave(pixels, height, width, mode="pride", delay=0, duration=30):
                     base_color = (0, 0, 255) if (x + y) % 2 == 0 else (255, 255, 255)
                     color = adjust_brightness(base_color, lighting_factors[x])
 
-                display_x = serpentine_x[y][x]
-                set_pixel(pixels, display_x, y, color, auto_write=False)
+                set_pixel(pixels, x, y, color, auto_write=False)
 
         pixels.show()
+        frame += 1
         if delay > 0:
             time.sleep(delay)
+    
+    log_module_finish("flag_wave", frame_count=frame, duration=time.monotonic() - start_time)

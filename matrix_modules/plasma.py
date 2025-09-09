@@ -5,9 +5,13 @@ Blobs are randomly generated and move in random directions.
 The blobs have diffuse edges, which makes them look like plasma.
 """
 import random
-from matrix_modules.utils import set_pixel
+import time
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish, ultra_sqrt
+from matrix_modules.constants import WIDTH, HEIGHT
 
-def plasma(pixels, width, height, delay=0, max_frames=100000):
+def plasma(pixels, width=WIDTH, height=HEIGHT, delay=0, max_frames=100000):
+    log_module_start("plasma", max_frames=max_frames)
+    start_time = time.monotonic()
     class Blob:
         def __init__(self):
             self.x = random.uniform(0, width - 1)
@@ -53,28 +57,32 @@ def plasma(pixels, width, height, delay=0, max_frames=100000):
                     d2 = (bx - x)**2 + (by - y)**2
                     if d2 >= bsize*bsize*1.56:
                         continue
-                    intensity = max(0, 1 - (d2**0.5 / bsize))
+                    intensity = max(0, 1 - (ultra_sqrt(d2) / max(0.1, bsize)))  # Prevent division by zero
                     r += int(br * intensity)
                     g += int(bg * intensity)
                     b += int(bb * intensity)
                 r = min(255, r)
                 g = min(255, g)
                 b = min(255, b)
-                display_x = x
-                if y % 2 == 0:
-                    display_x = abs(x - width + 1)
-                set_pixel(pixels, display_x, y, (r, g, b), auto_write=False)
+                set_pixel(pixels, x, y, (r, g, b), auto_write=False)
         pixels.show()
         if frame % 90 == 0:
             for blob in blobs:
                 blob.dx += random.uniform(-0.03, 0.03)
                 blob.dy += random.uniform(-0.03, 0.03)
-                speed = (blob.dx**2 + blob.dy**2)**0.5
+                speed = ultra_sqrt(blob.dx**2 + blob.dy**2)
                 if speed > 0.5:
                     factor = 0.5/speed
                     blob.dx *= factor
                     blob.dy *= factor
                 elif speed < 0.2:
-                    factor = 0.2/speed
-                    blob.dx *= factor
-                    blob.dy *= factor
+                    if speed > 0:  # Avoid division by zero
+                        factor = 0.2/speed
+                        blob.dx *= factor
+                        blob.dy *= factor
+                    else:
+                        # If blob is stopped, give it a small random velocity
+                        blob.dx = random.uniform(-0.2, 0.2)
+                        blob.dy = random.uniform(-0.2, 0.2)
+    
+    log_module_finish("plasma", frame_count=max_frames, duration=time.monotonic() - start_time)

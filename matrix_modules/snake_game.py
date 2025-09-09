@@ -3,13 +3,17 @@ Snake Game like from the original Snake game on Nokia phones.
 """
 import time
 import random
-from matrix_modules.utils import set_pixel, clear_pixels, game_over
+from matrix_modules.utils import set_pixel, clear_pixels, game_over, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def snake_game(pixels, width, height, delay=0.02, show_log=False):
+def snake_game(pixels, width=WIDTH, height=HEIGHT, delay=0.02, show_log=False):
     """
     Play the snake game on the given pixels.
     """
+    log_module_start("snake_game")
+    start_time = time.monotonic()
+    frame_count = 0
     snake = [(9, 9)]
     directions = ["up", "down", "left", "right"]
     direction = random.choice(directions)
@@ -93,10 +97,9 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
 
     # Main game loop optimizations
     while True:
+        frame_count += 1
         # Batch clear previous snake position
         for x, y in snake:
-            if y % 2 == 0:
-                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
 
         # Move the snake.
@@ -177,8 +180,6 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         # Clear the previous dot if it exists
         if last_dot_pos:
             x, y = last_dot_pos
-            if y % 2 == 0:
-                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
             last_dot_pos = None  # Reset after clearing
 
@@ -194,13 +195,9 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
         # Batch update snake and dot positions
         if dot:
             x, y = dot
-            if y % 2 == 0:
-                x = width - 1 - x
             set_pixel(pixels, x, y, (255, 0, 0), auto_write=False)
 
         for x, y in snake:
-            if y % 2 == 0:
-                x = width - 1 - x
             set_pixel(pixels, x, y, (0, 255, 0), auto_write=False)
 
         # Single screen update per frame
@@ -256,4 +253,7 @@ def snake_game(pixels, width, height, delay=0.02, show_log=False):
                     direction = random.choice(safe_dirs)
 
     clear_pixels(pixels)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("snake_game", frame_count=frame_count, duration=duration)
 

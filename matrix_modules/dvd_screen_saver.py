@@ -3,13 +3,16 @@ Displays a bouncing DVD logo on the screen.
 """
 import time
 import random
-from matrix_modules.utils import clear_pixels, set_pixel
+from matrix_modules.utils import clear_pixels, set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def dvd_screen_saver(pixels, width, height, delay=0.5, max_frames=1000):
+def dvd_screen_saver(pixels, width=WIDTH, height=HEIGHT, delay=0.05, max_frames=1000):
     """
     Displays a bouncing 2x2 block with spin effect.
     """
+    log_module_start("dvd_screen_saver", max_frames=max_frames)
+    start_time = time.monotonic()
     # Initialize position and velocities
     x = random.randint(0, width - 3)
     y = random.randint(0, height - 3)
@@ -69,10 +72,11 @@ def dvd_screen_saver(pixels, width, height, delay=0.5, max_frames=1000):
 
         current_color = colors[color_index]
         for bx, by in block_positions:
-            plot_x = abs(bx - width + 1) if by % 2 == 0 else bx
-            if 0 <= plot_x < width and 0 <= by < height:
-                set_pixel(pixels, plot_x, by, current_color, auto_write=False)
+            if 0 <= bx < width and 0 <= by < height:
+                set_pixel(pixels, bx, by, current_color, auto_write=False)
 
         pixels.show()
         frame_number += 1
         time.sleep(delay)
+    
+    log_module_finish("dvd_screen_saver", frame_count=frame_number, duration=time.monotonic() - start_time)

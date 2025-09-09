@@ -6,13 +6,16 @@ When all three lights find it, the screen fills with a flashing rainbow pattern.
 import math
 import random
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def search_light(pixels, width, height, delay=0.05, max_cycles=5):
+def search_light(pixels, width=WIDTH, height=HEIGHT, delay=0.05, max_cycles=5):
     """
     Display searchlights hunting for a hidden target block.
     """
+    log_module_start("search_light", max_cycles=max_cycles)
+    start_time = time.monotonic()
     
     class Target:
         def __init__(self):
@@ -192,14 +195,10 @@ def search_light(pixels, width, height, delay=0.05, max_cycles=5):
                         
                         background[y][x] = color
             
-            # Apply to display with serpentine wiring
+            # Apply to display
             for y in range(height):
                 for x in range(width):
-                    display_x = x
-                    if y % 2 == 0:
-                        display_x = width - 1 - x
-                    
-                    set_pixel(pixels, display_x, y, background[y][x], auto_write=False)
+                    set_pixel(pixels, x, y, background[y][x], auto_write=False)
             
             pixels.show()
             time.sleep(0.05)
@@ -255,17 +254,16 @@ def search_light(pixels, width, height, delay=0.05, max_cycles=5):
             
             cycles_completed += 1
         
-        # Apply background to display with serpentine wiring
+        # Apply background to display
         for y in range(height):
             for x in range(width):
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
-                
-                set_pixel(pixels, display_x, y, background[y][x], auto_write=False)
+                set_pixel(pixels, x, y, background[y][x], auto_write=False)
         
         pixels.show()
         frame += 1
         
         if delay > 0:
             time.sleep(delay)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("search_light", frame_count=frame, duration=duration)

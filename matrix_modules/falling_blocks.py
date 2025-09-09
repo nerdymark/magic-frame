@@ -10,7 +10,8 @@ if y % 2 == 0:
 """
 import random
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
 class FallingBlock:
@@ -96,7 +97,7 @@ class FallingBlock:
         return False
 
 
-def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
+def falling_blocks(pixels, width=WIDTH, height=HEIGHT, delay=0, max_frames=100000):
     """
     The main function to run the falling blocks effect.
     
@@ -107,11 +108,8 @@ def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
     - delay: Optional delay between frames (seconds)
     - max_frames: Maximum number of frames to run the animation
     """
-    # Helper function to handle serpentine wiring
-    def get_display_x(x, y):
-        if y % 2 == 0:  # Even rows are reversed in serpentine wiring
-            return width - 1 - x
-        return x
+    log_module_start("falling_blocks", max_frames=max_frames)
+    start_time = time.monotonic()
 
     # Initialize the falling blocks
     blocks = []
@@ -126,8 +124,7 @@ def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
         # Clear the display
         for y in range(height):
             for x in range(width):
-                display_x = get_display_x(x, y)
-                set_pixel(pixels, display_x, y, (0, 0, 0), auto_write=False)
+                set_pixel(pixels, x, y, (0, 0, 0), auto_write=False)
 
         # Update and draw settled blocks first
         for block in settled_blocks:
@@ -136,17 +133,26 @@ def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
                     bx = int(block.x) + dx
                     by = int(block.y) + dy
                     if 0 <= bx < width and 0 <= by < height:
-                        display_x = get_display_x(bx, by)
-                        set_pixel(pixels, display_x, by, block.color, auto_write=False)
+                        set_pixel(pixels, bx, by, block.color, auto_write=False)
 
-        # Check if screen is full (any blocks at the top)
-        screen_full = any(int(block.y) == 0 for block in settled_blocks)
-        if screen_full:
-            # Reset the game - clear all blocks
-            settled_blocks = []
-            blocks = []
-            for _ in range(5):
-                blocks.append(FallingBlock(width, height))
+        # Check if screen is mostly full (75% of screen has blocks)
+        # Count how many positions have blocks
+        filled_positions = set()
+        for block in settled_blocks:
+            for dy in range(block.block_height):
+                for dx in range(block.block_width):
+                    bx = int(block.x) + dx
+                    by = int(block.y) + dy
+                    if 0 <= bx < width and 0 <= by < height:
+                        filled_positions.add((bx, by))
+        
+        total_positions = width * height
+        fill_percentage = len(filled_positions) / total_positions
+        
+        if fill_percentage >= 0.75:  # Screen is 75% full
+            # End the animation - screen is full
+            log_module_finish("falling_blocks", frame_count=frame_count, duration=time.monotonic() - start_time)
+            break
 
         # Update and draw all active blocks
         active_blocks = []
@@ -159,8 +165,7 @@ def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
                     bx = int(block.x) + dx
                     by = int(block.y) + dy
                     if 0 <= bx < width and 0 <= by < height:
-                        display_x = get_display_x(bx, by)
-                        set_pixel(pixels, display_x, by, block.color, auto_write=False)
+                        set_pixel(pixels, bx, by, block.color, auto_write=False)
 
             # Track blocks that are still falling
             if block.falling:
@@ -189,4 +194,5 @@ def falling_blocks(pixels, width, height, delay=0, max_frames=100000):
 
         frame_count += 1
 
+    log_module_finish("falling_blocks", frame_count=frame_count, duration=time.monotonic() - start_time)
     return frame_count

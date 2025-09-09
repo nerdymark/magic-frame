@@ -5,13 +5,16 @@ Simulates slowly moving water with gentle waves and ripple effects.
 import math
 import random
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def water_ripples(pixels, width, height, delay=0.1, max_frames=150):
+def water_ripples(pixels, width=WIDTH, height=HEIGHT, delay=0.1, max_frames=150):
     """
     Create a soothing water ripple animation with gentle waves.
     """
+    log_module_start("water_ripples", max_frames=max_frames)
+    start_time = time.monotonic()
     
     class Ripple:
         def __init__(self, x, y, max_radius, speed, intensity):
@@ -56,10 +59,10 @@ def water_ripples(pixels, width, height, delay=0.1, max_frames=150):
         wave2 = math.cos((y + time_offset * 0.4) / 4.0)
         wave3 = math.sin((x + y + time_offset * 0.3) / 5.0)
         
-        # Independent color shifting waves
-        red_shift = math.sin(time_offset * 0.15 + x * 0.1)
-        green_shift = math.cos(time_offset * 0.12 + y * 0.08)
-        blue_shift = math.sin(time_offset * 0.18 + (x + y) * 0.05)
+        # Independent color shifting waves - SMOOTHED to reduce flickering
+        red_shift = math.sin(time_offset * 0.08 + x * 0.05)  # Slower, less spatial variation
+        green_shift = math.cos(time_offset * 0.06 + y * 0.03)  # Much slower vertical patterns
+        blue_shift = math.sin(time_offset * 0.09 + (x + y) * 0.025)  # Smoother diagonal shifts
         
         # Create depth variation with fewer calculations
         depth = (wave1 + wave2 + 2) / 4  # Normalized to 0-1 range
@@ -69,13 +72,13 @@ def water_ripples(pixels, width, height, delay=0.1, max_frames=150):
         current_normalized = (current + 1) / 2  # Normalize to 0-1
         
         if depth < 0.4:  # Deep water
-            base_r = int(8 + depth * 30 + red_shift * 15)
-            base_g = int(15 + depth * 50 + green_shift * 20) 
-            base_b = int(60 + depth * 70 + blue_shift * 25)
+            base_r = int(8 + depth * 30 + red_shift * 8)  # Reduced color shift intensity
+            base_g = int(15 + depth * 50 + green_shift * 10)  # Much less green variation
+            base_b = int(60 + depth * 70 + blue_shift * 15)
         else:  # Shallow water
-            base_r = int(15 + current_normalized * 40 + red_shift * 20)
-            base_g = int(50 + current_normalized * 80 + green_shift * 30)
-            base_b = int(90 + current_normalized * 60 + blue_shift * 25)
+            base_r = int(15 + current_normalized * 40 + red_shift * 10)
+            base_g = int(50 + current_normalized * 80 + green_shift * 15)  # Reduced green flickering
+            base_b = int(90 + current_normalized * 60 + blue_shift * 15)
         
         # Ensure colors stay within bounds
         base_r = max(0, min(255, base_r))
@@ -152,15 +155,13 @@ def water_ripples(pixels, width, height, delay=0.1, max_frames=150):
                     final_g = base_g
                     final_b = base_b
                 
-                # Handle serpentine wiring
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
-                
-                set_pixel(pixels, display_x, y, (final_r, final_g, final_b), auto_write=False)
+                set_pixel(pixels, x, y, (final_r, final_g, final_b), auto_write=False)
         
         pixels.show()
         frame += 1
         
         if delay > 0:
             time.sleep(delay)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("water_ripples", frame_count=frame, duration=duration)

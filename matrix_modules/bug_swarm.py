@@ -5,13 +5,16 @@ The lead bug moves in organic patterns while followers trail behind with slight 
 import math
 import random
 import time
-from matrix_modules.utils import set_pixel
+from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def bug_swarm(pixels, width, height, delay=0.05, max_frames=1000):
+def bug_swarm(pixels, width=WIDTH, height=HEIGHT, delay=0.05, max_frames=1000):
     """
     Simulate a bug flying with a swarm following behind.
     """
+    log_module_start("bug_swarm", max_frames=max_frames)
+    start_time = time.monotonic()
     
     class Bug:
         def __init__(self, x, y, is_leader=False):
@@ -152,10 +155,7 @@ def bug_swarm(pixels, width, height, delay=0.05, max_frames=1000):
                 background[y][x] = (max(0, r - 25), max(0, g - 25), max(0, b - 25))
                 
                 # Apply faded background
-                display_x = x
-                if y % 2 == 0:
-                    display_x = width - 1 - x
-                set_pixel(pixels, display_x, y, background[y][x], auto_write=False)
+                set_pixel(pixels, x, y, background[y][x], auto_write=False)
         
         # Update leader
         leader.update_leader(frame)
@@ -177,12 +177,7 @@ def bug_swarm(pixels, width, height, delay=0.05, max_frames=1000):
             )
             background[leader_y][leader_x] = bright_leader_color
             
-            # Handle serpentine wiring for leader
-            display_leader_x = leader_x
-            if leader_y % 2 == 0:
-                display_leader_x = width - 1 - leader_x
-            
-            set_pixel(pixels, display_leader_x, leader_y, bright_leader_color, auto_write=False)
+            set_pixel(pixels, leader_x, leader_y, bright_leader_color, auto_write=False)
         
         # Draw followers with trail blending
         for follower in followers:
@@ -199,15 +194,13 @@ def bug_swarm(pixels, width, height, delay=0.05, max_frames=1000):
                 )
                 background[follower_y][follower_x] = new_color
                 
-                # Handle serpentine wiring for followers
-                display_follower_x = follower_x
-                if follower_y % 2 == 0:
-                    display_follower_x = width - 1 - follower_x
-                
-                set_pixel(pixels, display_follower_x, follower_y, new_color, auto_write=False)
+                set_pixel(pixels, follower_x, follower_y, new_color, auto_write=False)
         
         pixels.show()
         frame += 1
         
         if delay > 0:
             time.sleep(delay)
+    
+    duration = time.monotonic() - start_time
+    log_module_finish("bug_swarm", frame_count=frame, duration=duration)

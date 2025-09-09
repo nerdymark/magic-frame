@@ -3,12 +3,15 @@ Emulates the classic "rain of code" made famous by the movie "The Matrix".
 """
 import time
 import random
-from matrix_modules.utils import clear_pixels
+from matrix_modules.utils import clear_pixels, log_module_start, log_module_finish
+from matrix_modules.constants import WIDTH, HEIGHT
 
-def the_matrix(pixels, width, height, delay=0.001, max_frames=1000):
+def the_matrix(pixels, width=WIDTH, height=HEIGHT, delay=0.001, max_frames=1000):
     """
     Optimized matrix rain effect for maximum performance with smooth movement.
     """
+    log_module_start("the_matrix", max_frames=max_frames)
+    start_time = time.monotonic()
     # Configuration for visual effect
     fade_factor = 30
     max_drops = width * 2  # More drops for denser effect
@@ -118,3 +121,5 @@ def the_matrix(pixels, width, height, delay=0.001, max_frames=1000):
         pixels.show()
         time.sleep(delay)
         frame_number += 1
+    
+    log_module_finish("the_matrix", frame_count=frame_number, duration=time.monotonic() - start_time)
