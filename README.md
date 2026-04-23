@@ -1,19 +1,21 @@
 # NeoPixel LED Matrix Picture Frame
 
-A mesmerizing 18x18 LED matrix display featuring beautiful animations, games, and visual effects. Built with CircuitPython for the Raspberry Pi Pico W.
+A mesmerizing 18x18 LED matrix display featuring animations, games, optical illusions, and visual effects. Built with CircuitPython for the Raspberry Pi Pico W.
 
 🎮 **[Try the Live Web Simulation →](https://nerdymark.com/magic-frame-sim)**
 
-![LED Matrix Demo](https://img.shields.io/badge/LEDs-324-brightgreen) ![CircuitPython](https://img.shields.io/badge/CircuitPython-8.x-blueviolet) ![License](https://img.shields.io/badge/license-MIT-blue)
+![LED Matrix Demo](https://img.shields.io/badge/LEDs-324-brightgreen) ![CircuitPython](https://img.shields.io/badge/CircuitPython-9.x-blueviolet) ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ## 🌟 Features
 
-- **35+ Stunning Animation Modules**: From serene water ripples to dynamic plasma effects, mathematical visualizations, and particle systems
-- **Interactive Games**: Self-playing Snake, Strategic Snake AI, and Conway's Game of Life
-- **Flag Displays**: Pride, Trans, Ukraine, and USA flags with realistic wave effects
+- **50+ Animation Modules**: From serene water ripples to dynamic plasma effects, mathematical visualizations, and particle systems
+- **Optical Illusions**: Afterimage/cone fatigue, simultaneous contrast, and Hermann/scintillating grid effects
+- **Games**: Self-playing Snake, Strategic Snake AI, and Conway's Game of Life
+- **Flag Displays**: Pride, Trans, Ukraine, USA, and Palestine flags with realistic wave physics
 - **Particle Systems**: Fish schooling, bug swarms, Matrix rain, bubbles, and starfields
 - **Mathematical Art**: Mandelbrot/Julia fractals, Lissajous curves, plasma effects, and tunnel visualization
-- **Retro Demoscene Effects**: C64-style copper bars, raster bars, rotozoomer, and lens flare
+- **Retro Demoscene Effects**: C64-style copper bars, raster bars, rotozoomer, Glenz vectors, Mode 7, and lens flare
+- **3D Graphics**: Hypercube (tesseract), voxel terrain, Rubik's cube, and shading demos
 - **Ultra-Optimized Performance**: CPU overclocking, lookup tables, and efficient serpentine wiring support
 
 ## 🛠️ Hardware Requirements
@@ -85,7 +87,7 @@ Raspberry Pi Pico W          NeoPixel Strip
 ## 💾 Software Installation
 
 1. **Install CircuitPython**
-   - Download CircuitPython 8.x for Raspberry Pi Pico W
+   - Download CircuitPython 9.x for Raspberry Pi Pico W
    - Hold BOOTSEL button while connecting USB
    - Copy the .uf2 file to the RPI-RP2 drive
 
@@ -100,12 +102,25 @@ Raspberry Pi Pico W          NeoPixel Strip
 
 ## 🎨 Animation Modules
 
+### **🧠 Optical Illusions**
+
+These modules exploit specific quirks in human visual perception. They work best when viewed from a comfortable distance (2–4 feet).
+
+#### 🔴 **afterimage**
+Exploits cone fatigue — staring at a bright saturated color for several seconds tires the retinal cones sensitive to that hue. When the display switches to neutral white, the viewer briefly sees the complementary color as an afterimage. Cycles through six patterns (halves, cross, bullseye, checkerboard, diagonal, quadrants) using cyan, yellow, and magenta. *Fix your gaze on the center for ~7 seconds, then hold still when it turns white.*
+
+#### 🟦 **simultaneous_contrast**
+The exact same neutral gray square appears dramatically different depending on its surrounding color. On a blue background it looks warm; the identical square on an orange background looks cool. The visual cortex compensates for assumed "ambient light" by shifting perceived hue in the complementary direction. Cycles through six contrasting background pairs.
+
+#### ⬛ **scintillating_grid**
+A 3×3 arrangement of dark squares separated by bright corridors creates phantom dark smudges at the corridor intersections (Hermann grid effect). Adding brighter blobs at each intersection causes them to appear to flicker as your eyes scan across (scintillating grid variant). Alternates between both variants across four color themes. *Let your gaze wander freely — don't fixate.*
+
 ### **Particle & Natural Effects**
 
 #### 🌊 **water_ripples**
 Soothing underwater scene with gentle ripples spreading across the surface. Features realistic ripple physics, depth-based blue-green coloring, and random ripple generation for a peaceful aquatic atmosphere.
 
-#### 🫧 **bubbles** 
+#### 🫧 **bubbles**
 Endless floating bubbles rising through water with realistic physics. Bubbles vary in size and speed, with natural horizontal drift and shimmer effects. Includes occasional surface bubble bursts.
 
 #### ❄️ **blizzard**
@@ -142,6 +157,9 @@ Advanced AI Snake that uses edge-following pathfinding to build the longest poss
 #### 🧬 **john_conways_game_of_life**
 Conway's Game of Life with colorful mutations and visitor injection system. Features color inheritance, dynamic mutation rates, automatic restart, and population management.
 
+#### 🧩 **maze**
+Procedurally generated mazes with animated solving. Generates a new solvable maze each run and animates the pathfinding solution.
+
 ### **Mathematical & Fractal Art**
 
 #### 🌀 **mandelbrot_julia**
@@ -158,6 +176,26 @@ Hypnotic moiré interference patterns created by overlapping mathematical grids.
 
 #### 🧬 **dna_helix**
 Double helix DNA structure with rotating base pairs and genetic code visualization. Features scientifically accurate structure, smooth rotation, and nucleotide coloring.
+
+### **3D Graphics & Visualization**
+
+#### 🔮 **hypercube_4d**
+A four-dimensional hypercube (tesseract) projected into 2D and animated through 4D rotation. Features smooth perspective projection, depth-based coloring, and continuous rotation through multiple axes.
+
+#### 🏔️ **voxel_terrain**
+Voxel-based terrain flythrough with procedurally generated landscapes. Features height maps, depth shading, and smooth camera movement over rolling terrain.
+
+#### 🎲 **rubiks_cube**
+Animated Rubik's cube with scrambling and solving sequences. Features accurate face rotation mechanics, bright color faces, and isometric-style projection.
+
+#### 💡 **shading_demo**
+Demonstration of 3D shading and lighting techniques including Lambertian diffuse shading, specular highlights, and ambient occlusion on simple geometric forms.
+
+#### 🔷 **glenz_vectors**
+Classic demoscene Glenz vector effect — semi-transparent 3D wireframe objects with correct face ordering and color blending. Named after the Glenz demo that popularized the technique.
+
+#### 🎮 **mode7**
+SNES-style Mode 7 perspective floor transformation with tiled texture mapping. Recreates the iconic scaling/rotation effect used in classic games like F-Zero and Mario Kart.
 
 ### **Classic Demoscene Effects**
 
@@ -179,16 +217,25 @@ Realistic lens flare effects with multiple light sources and optical artifacts. 
 #### 💻 **c64_demoscene**
 Comprehensive Commodore 64 demoscene tribute with multiple classic effects. Features authentic color palettes, bitmap fonts, and retro visual styling.
 
+#### 🟣 **shadebobs**
+Classic demoscene shadebob effect — multiple glowing blobs that bounce and combine, creating smooth additive color blending and psychedelic trails.
+
+#### 🫁 **metaballs**
+Organic metaball fluid simulation where circular fields merge smoothly into blob-like shapes. Features real-time isosurface rendering and fluid color transitions.
+
+#### 📜 **parallax_scroller**
+Classic multi-layer parallax scrolling with foreground, midground, and background layers moving at different speeds. Recreates the depth illusion from early arcade and console games.
+
 ### **Text & Communication**
 
 #### 📜 **sine_scrollers**
-Smooth scrolling text with sine wave motion displaying "hello world! hello apple! oh hi mark!" Features classic demo-style text animation and wave distortion.
+Smooth scrolling text with sine wave motion. Features classic demo-style text animation and wave distortion.
 
 #### 📱 **qr_renderer**
 QR code generation and display with error correction. Features dynamic code generation, proper formatting, and scannable output.
 
 #### 🍎 **apple_event_sep_2025**
-Special Apple-themed animation for events. Features Apple logo aesthetics, smooth transitions, and corporate branding elements.
+Special Apple-themed animation for events. Features Apple logo aesthetics and smooth transitions.
 
 ### **Abstract & Artistic**
 
@@ -199,7 +246,7 @@ Animated vector balls with physics simulation and trail effects. Features collis
 Three searchlights hunting for hidden targets with celebration effects. Features dynamic movement patterns, collision detection, and rainbow victory animations.
 
 #### 📀 **dvd_screen_saver**
-Classic bouncing DVD logo with color changes on wall hits. Features accurate physics simulation, spin effects, and nostalgia-inducing movement.
+Classic bouncing DVD logo with color changes on wall hits. Features accurate physics simulation and nostalgia-inducing movement.
 
 #### 🧱 **falling_blocks**
 Tetris-inspired falling blocks that stack and clear. Features collision detection, block rotation, stacking physics, and automatic reset functionality.
@@ -208,20 +255,30 @@ Tetris-inspired falling blocks that stack and clear. Features collision detectio
 Iconic Matrix digital rain effect with trailing characters. Features authentic green color scheme, random character generation, and fade effects.
 
 #### 🏳️ **flag_wave**
-Animated flags (Pride, Trans, Ukraine, USA) with realistic wave physics. Features sine wave distortion, dynamic lighting, and smooth patriotic color transitions.
+Animated flags with realistic wave physics — sine wave distortion, dynamic lighting, and smooth color transitions. Available modes:
+- **pride** — 7-stripe rainbow
+- **trans** — blue/pink/white
+- **ukraine** — blue and yellow
+- **usa** — stars and stripes with blue canton
+- **palestine** — black/white/green stripes with red triangle
 
 ## 📁 Project Structure
 
 ```
 /CIRCUITPY/
-├── code.py                          # Main entry point with animation orchestrator
+├── code.py                          # Main entry point — random shuffle animation loop
 ├── lib/                             # CircuitPython libraries
 │   ├── neopixel.mpy
 │   └── adafruit_pixelbuf.mpy
-└── matrix_modules/                  # 35+ Animation modules
+└── matrix_modules/                  # 50+ Animation modules
     ├── __init__.py
-    ├── constants.py                 # Ultra-optimized lookup tables & CPU overclocking
-    ├── utils.py                     # Shared utilities & performance functions
+    ├── constants.py                 # Lookup tables, timing constants, CPU overclocking
+    ├── utils.py                     # Shared utilities & serpentine pixel mapping
+    │
+    ├── # Optical Illusions
+    ├── afterimage.py               # Cone fatigue & complementary color afterimage
+    ├── simultaneous_contrast.py    # Same color looks different on contrasting backgrounds
+    ├── scintillating_grid.py       # Hermann grid & scintillating grid phantom spots
     │
     ├── # Particle & Natural Effects
     ├── water_ripples.py            # Soothing water simulation
@@ -231,7 +288,7 @@ Animated flags (Pride, Trans, Ukraine, USA) with realistic wave physics. Feature
     ├── starfield.py                # 3D star travel effect
     ├── lava_lamp.py                # Relaxing lava lamp physics
     │
-    ├── # Aquatic & Marine Life  
+    ├── # Aquatic & Marine Life
     ├── fish_schooling.py           # Boids flocking algorithm
     ├── fishtank.py                 # Complete aquarium simulation
     ├── bug_swarm.py                # Leader-follower swarm behavior
@@ -240,30 +297,42 @@ Animated flags (Pride, Trans, Ukraine, USA) with realistic wave physics. Feature
     ├── snake_game.py               # Classic AI Snake game
     ├── strategic_snake.py          # Advanced pathfinding Snake
     ├── john_conways_game_of_life.py # Game of Life with mutations
+    ├── maze.py                     # Procedural maze generation & solving
     │
     ├── # Mathematical & Fractal Art
     ├── mandelbrot_julia.py         # Fractal visualization
     ├── plasma.py                   # Classic plasma effect
     ├── plasma_two.py               # Alternative plasma algorithm
     ├── diamond_plasma.py           # Diamond-pattern plasma
-    ├── ripple_plasma.py            # Ultra-optimized ripples
+    ├── ripple_plasma.py            # Ripple interference plasma
     ├── spiral_plasma.py            # Spiral interference patterns
     ├── lissajous_curves.py         # Parametric curve animation
     ├── moire_patterns.py           # Optical interference effects
     ├── dna_helix.py                # Double helix visualization
     │
+    ├── # 3D Graphics & Visualization
+    ├── hypercube_4d.py             # 4D tesseract rotation
+    ├── voxel_terrain.py            # Voxel terrain flythrough
+    ├── rubiks_cube.py              # Animated Rubik's cube
+    ├── shading_demo.py             # 3D shading & lighting techniques
+    ├── glenz_vectors.py            # Semi-transparent 3D wireframes
+    ├── mode7.py                    # SNES-style perspective floor
+    │
     ├── # Classic Demoscene Effects
     ├── tunnel.py                   # 3D tunnel with rainbow colors
-    ├── rotozoomer.py              # Rotating/zooming textures
-    ├── copper_bars.py             # C64-style color gradients
-    ├── raster_bars.py             # Retro raster effects
-    ├── lens_flare.py              # Cinematic lighting effects
-    ├── c64_demoscene.py           # Comprehensive C64 tribute
+    ├── rotozoomer.py               # Rotating/zooming textures
+    ├── copper_bars.py              # C64-style color gradients
+    ├── raster_bars.py              # Retro raster effects
+    ├── lens_flare.py               # Cinematic lighting effects
+    ├── c64_demoscene.py            # Comprehensive C64 tribute
+    ├── shadebobs.py                # Bouncing glowing blobs
+    ├── metaballs.py                # Organic fluid metaballs
+    ├── parallax_scroller.py        # Multi-layer parallax scrolling
     │
     ├── # Text & Communication
-    ├── sine_scrollers.py          # Wave-distorted scrolling text
-    ├── qr_renderer.py             # QR code generation
-    ├── apple_event_sep_2025.py    # Apple-themed animation
+    ├── sine_scrollers.py           # Wave-distorted scrolling text
+    ├── qr_renderer.py              # QR code generation
+    ├── apple_event_sep_2025.py     # Apple-themed animation
     │
     └── # Abstract & Artistic
         ├── vector_balls.py         # Physics-based particle motion
@@ -271,65 +340,43 @@ Animated flags (Pride, Trans, Ukraine, USA) with realistic wave physics. Feature
         ├── dvd_screen_saver.py     # Classic bouncing logo
         ├── falling_blocks.py       # Tetris-inspired blocks
         ├── the_matrix.py           # Matrix digital rain
-        └── flag_wave.py            # Animated flags with physics
+        └── flag_wave.py            # Animated flags (pride/trans/ukraine/usa/palestine)
 ```
 
 ## 🔧 Customization
 
-### Changing Animation Order
-Edit `code.py` to modify the animation sequence:
-
-```python
-while True:
-    # Add or reorder animations here
-    plasma.plasma(pixels, WIDTH, HEIGHT, delay=0.0, max_frames=1000)
-    # Your custom animation
-    my_animation.animate(pixels, WIDTH, HEIGHT)
-```
-
-### Adjusting Brightness
-Modify `DEFAULT_BRIGHTNESS` in `code.py`:
-```python
-DEFAULT_BRIGHTNESS = 0.05  # Range: 0.0 to 1.0
-```
-
-### Creating Custom Animations
+### Adding Animations
 1. Create a new file in `matrix_modules/`
-2. Implement your animation function:
+2. Implement the standard animation function signature:
 ```python
-def my_animation(pixels, width, height, delay=0.1, **kwargs):
-    # Your animation code here
+def my_animation(pixels, width=WIDTH, height=HEIGHT, delay=0, max_frames=1000):
     pass
 ```
-3. Import and add to the main loop in `code.py`
+3. Add a try/except import block and an entry in the `_all_animations` list in `code.py`
+
+### Adjusting Brightness
+Modify `DEFAULT_BRIGHTNESS` in `matrix_modules/constants.py`:
+```python
+DEFAULT_BRIGHTNESS = 0.2  # Range: 0.0 to 1.0
+```
 
 ## ⚡ Performance Optimizations
 
-This system implements **ultra-aggressive performance optimizations**:
-
 ### **Hardware Overclocking**
-- **CPU Speed**: Overclocked from 125MHz to **350MHz** (2.8x boost!)
-- **Memory**: Optimized memory access patterns for maximum bandwidth
-- **Real-time Performance**: Achieving 50+ FPS on most animations
+- **CPU Speed**: Overclocked to **250MHz** via `boot.py` (configured in `constants.py`)
+- **Real-time Performance**: 20–60+ FPS depending on animation complexity
 
 ### **Software Optimizations**
-- **Ultra-Fast Lookup Tables**: Pre-calculated sine, cosine, and square root functions
-- **Serpentine Pixel Mapping**: Pre-calculated LED coordinate transformations
-- **Batch Pixel Updates**: Use `auto_write=False` and single `pixels.show()` calls
-- **Mathematical Optimizations**: Integer math where possible, avoiding floating-point operations
+- **Ultra-Fast Lookup Tables**: Pre-calculated sine, cosine, and square root in `constants.py`
+- **Serpentine Pixel Mapping**: Pre-calculated in `utils.py` as `SERPENTINE_MAP`
+- **Batch Pixel Updates**: `auto_write=False` throughout with a single `pixels.show()` per frame
+- **Integer Math**: Avoided floating-point operations in hot paths
 
-### **Animation Tuning**
-- Keep `delay=0.0` for maximum frame rates
-- Use `max_frames` parameters to control animation duration
-- Pre-calculate complex values outside render loops
-- Leverage the ultra-fast utility functions: `ultra_sin()`, `ultra_cos()`, `ultra_sqrt()`
-
-### **Performance Monitoring**
-All animations include start/finish logging with:
-- Frame count tracking
-- Duration measurement  
-- Automatic FPS calculation
-- Performance regression detection
+### **Animation Utilities**
+- `ultra_sin()`, `ultra_cos()` — lookup-table trig (~10x faster than `math.sin`)
+- `ultra_sqrt()` — lookup-table square root for values 0–255
+- `set_pixel(pixels, x, y, color, auto_write=False)` — serpentine-aware pixel setter
+- `log_module_start()` / `log_module_finish()` — automatic FPS logging
 
 ## 🐛 Troubleshooting
 
@@ -339,14 +386,17 @@ All animations include start/finish logging with:
 - Ensure ground is connected between Pico and LEDs
 
 **Animations running slowly**
-- Reduce `delay` parameter
-- Disable `animations` flag in Game of Life
-- Check power supply capacity
+- Reduce `delay` parameter to `0`
+- Check power supply capacity (needs ~20A at full brightness)
 
 **Random flickering**
 - Add logic level shifter
 - Shorten data wire length
 - Increase resistor value to 1kΩ
+
+**Module import error on boot**
+- Failed imports are printed as warnings and skipped — the rest of the animations continue
+- Check `/error_log.txt` on the CIRCUITPY drive for details
 
 ## 🤝 Contributing
 
