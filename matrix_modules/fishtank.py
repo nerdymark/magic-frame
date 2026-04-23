@@ -9,7 +9,7 @@ import math
 from matrix_modules.utils import set_pixel, log_module_start, log_module_finish, ultra_sin, ultra_cos
 from matrix_modules.constants import WIDTH, HEIGHT, DEFAULT_DELAY
 
-def fishtank(pixels, width=WIDTH, height=HEIGHT, delay=DEFAULT_DELAY, max_frames=2000):
+def fishtank(pixels, width=WIDTH, height=HEIGHT, delay=DEFAULT_DELAY, max_frames=500):
     """
     Generate a peaceful fishtank scene with fish, bubbles, and shimmering water.
     Complete underwater ecosystem simulation.

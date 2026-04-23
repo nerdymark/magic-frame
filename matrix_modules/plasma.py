@@ -9,7 +9,7 @@ import time
 from matrix_modules.utils import set_pixel, log_module_start, log_module_finish, ultra_sqrt
 from matrix_modules.constants import WIDTH, HEIGHT
 
-def plasma(pixels, width=WIDTH, height=HEIGHT, delay=0, max_frames=100000):
+def plasma(pixels, width=WIDTH, height=HEIGHT, delay=0, max_frames=500):
     log_module_start("plasma", max_frames=max_frames)
     start_time = time.monotonic()
     class Blob:

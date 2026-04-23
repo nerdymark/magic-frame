@@ -9,7 +9,7 @@ from matrix_modules.utils import set_pixel, log_module_start, log_module_finish
 from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def apple_event_sep_2025(pixels, width=WIDTH, height=HEIGHT, delay=0.0, max_frames=1000):
+def apple_event_sep_2025(pixels, width=WIDTH, height=HEIGHT, delay=0.0, max_frames=500):
     """
     Generate Apple Event themed plasma effect.
     Maximum optimization for 60+ FPS on microcontrollers.

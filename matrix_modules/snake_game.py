@@ -7,7 +7,7 @@ from matrix_modules.utils import set_pixel, clear_pixels, game_over, log_module_
 from matrix_modules.constants import WIDTH, HEIGHT
 
 
-def snake_game(pixels, width=WIDTH, height=HEIGHT, delay=0.02, show_log=False):
+def snake_game(pixels, width=WIDTH, height=HEIGHT, delay=0.02, show_log=False, max_frames=5000):
     """
     Play the snake game on the given pixels.
     """
@@ -96,7 +96,7 @@ def snake_game(pixels, width=WIDTH, height=HEIGHT, delay=0.02, show_log=False):
     pixels.fill((0, 0, 0))  # Clear screen at start
 
     # Main game loop optimizations
-    while True:
+    while frame_count < max_frames:
         frame_count += 1
         # Batch clear previous snake position
         for x, y in snake:
